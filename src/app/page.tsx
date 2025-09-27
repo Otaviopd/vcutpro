@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { VideoProcessor } from '../componentes/VideoProcessor';
+import { VideoProcessorSimple } from '../componentes/VideoProcessorSimple';
 import { useAuthHook } from "../hooks/useAuth";
 import LoginScreen from "../componentes/LoginScreen";
 
@@ -14,6 +14,6 @@ export default function VCutPlatform() {
 
   // Mostrar processador de vídeo se autenticado
   return (
-    <VideoProcessor onLogout={auth.logout} />
+    <VideoProcessorSimple onLogout={auth.logout} />
   );
 }

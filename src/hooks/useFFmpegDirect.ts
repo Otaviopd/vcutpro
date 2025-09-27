@@ -45,10 +45,10 @@ export const useFFmpegDirect = (): UseFFmpegDirectReturn => {
 
     setProgress({ phase: 'Carregando FFmpeg...', progress: 0 });
 
-    // Carregar FFmpeg com URLs otimizadas
+    // Carregar FFmpeg com URLs da CDN
     await ffmpegInstance.load({
-      coreURL: await toBlobURL('/ffmpeg/ffmpeg-core.js', 'text/javascript'),
-      wasmURL: await toBlobURL('/ffmpeg/ffmpeg-core.wasm', 'application/wasm'),
+      coreURL: await toBlobURL('https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js', 'text/javascript'),
+      wasmURL: await toBlobURL('https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm', 'application/wasm'),
     });
 
     setFFmpeg(ffmpegInstance);

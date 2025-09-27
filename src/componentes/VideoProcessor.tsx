@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { useFFmpegDirect } from '../hooks/useFFmpegDirect';
+import { useFFmpeg } from '../hooks/useFFmpeg';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 
@@ -22,7 +22,7 @@ export const VideoProcessor: React.FC<VideoProcessorProps> = ({ onLogout }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   
-  const { isSupported, isProcessing, progress, processDirectCut, processAutoClips } = useFFmpegDirect();
+  const { isSupported, isProcessing, progress, processSingleClip } = useFFmpeg();
 
   // Converter segundos para MM:SS
   const formatTime = (seconds: number): string => {
