@@ -78,24 +78,23 @@ export const useCanvasMP4 = (): UseCanvasMP4Return => {
       // Configurar stream com vídeo E ÁUDIO - 30fps para fluidez ideal
       const videoStream = canvas.captureStream(30); // 30fps fluido e estável
       
-      // Captura simplificada de áudio (mais compatível)
-      let audioContext: AudioContext | null = null;
+      const audioContext: AudioContext | null = null;
       let finalStream = videoStream; // Começar só com vídeo
       
       try {
         // Tentar capturar áudio de forma mais simples
-        if (video.mozCaptureStream) {
+        if (video instanceof HTMLVideoElement && 'mozCaptureStream' in video) {
           // Firefox
-          const fullStream = (video as any).mozCaptureStream();
+          const fullStream = video.mozCaptureStream();
           if (fullStream.getAudioTracks().length > 0) {
             finalStream = new MediaStream([
               ...videoStream.getVideoTracks(),
               ...fullStream.getAudioTracks()
             ]);
-          }
+{{ ... }}
         } else if (video.captureStream) {
           // Chrome - tentar capturar stream do elemento video
-          const fullStream = (video as any).captureStream();
+          const fullStream = (video as HTMLVideoElement & { captureStream: () => MediaStream }).captureStream();
           if (fullStream.getAudioTracks().length > 0) {
             finalStream = new MediaStream([
               ...videoStream.getVideoTracks(),

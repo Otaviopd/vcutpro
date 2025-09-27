@@ -144,14 +144,14 @@ export const useCanvasMP4 = (): UseCanvasMP4Return => {
       const videoStream = canvas.captureStream(targetFPS);
       
       // Captura simplificada de áudio (mais compatível)
-      let audioContext: AudioContext | null = null;
+      const audioContext: AudioContext | null = null;
       let finalStream = videoStream; // Começar só com vídeo
       
       try {
         // Tentar capturar áudio de forma mais simples
-        if (video.mozCaptureStream) {
+        if ((video as HTMLVideoElement & { mozCaptureStream?: () => MediaStream }).mozCaptureStream) {
           // Firefox
-          const fullStream = (video as any).mozCaptureStream();
+          const fullStream = (video as HTMLVideoElement & { mozCaptureStream: () => MediaStream }).mozCaptureStream();
           if (fullStream.getAudioTracks().length > 0) {
             finalStream = new MediaStream([
               ...videoStream.getVideoTracks(),
@@ -160,7 +160,7 @@ export const useCanvasMP4 = (): UseCanvasMP4Return => {
           }
         } else if (video.captureStream) {
           // Chrome - tentar capturar stream do elemento video
-          const fullStream = (video as any).captureStream();
+          const fullStream = (video as HTMLVideoElement & { captureStream: () => MediaStream }).captureStream();
           if (fullStream.getAudioTracks().length > 0) {
             finalStream = new MediaStream([
               ...videoStream.getVideoTracks(),

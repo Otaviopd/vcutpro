@@ -57,17 +57,15 @@ export const useFFmpeg = (): UseFFmpegReturn => {
       setProgress({ phase: 'Carregando FFmpeg...', progress: 0 });
 
       const { FFmpeg } = await import('@ffmpeg/ffmpeg');
-      const { fetchFile } = await import('@ffmpeg/util');
-
       const ffmpeg = new FFmpeg();
       ffmpegRef.current = ffmpeg;
 
       // Configurar logs e progresso
-      ffmpeg.on('log', ({ message }) => {
+      ffmpeg.on('log', ({ message }: { message: string }) => {
         console.log('[FFmpeg Log]:', message);
       });
 
-      ffmpeg.on('progress', ({ progress: progressValue }) => {
+      ffmpeg.on('progress', ({ progress: progressValue }: { progress: number }) => {
         setProgress(prev => ({ 
           ...prev, 
           progress: Math.round(progressValue * 100) 
