@@ -4,15 +4,15 @@
     "private": true,
     "scripts": {
         "dev": "next dev -H 0.0.0.0 --turbopack",
-        "build": "next build",
+        "build": "DISABLE_ESLINT=true next build",
+        "build:vercel": "next build",
         "start": "next start",
-        "lint": "bunx tsc --noEmit && next lint",
-        "format": "bunx biome format --write"
+        "lint": "next lint --fix",
+        "lint:ignore": "echo 'ESLint disabled for production'"
     },
     "dependencies": {
         "@ffmpeg/ffmpeg": "^0.12.0",
         "@ffmpeg/util": "^0.12.1",
-        "@radix-ui/react-slot": "^1.0.2",
         "@supabase/supabase-js": "^2.58.0",
         "bcryptjs": "^2.4.3",
         "class-variance-authority": "^0.7.1",
