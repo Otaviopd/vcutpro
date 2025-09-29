@@ -7,20 +7,22 @@ export interface ProcessingProgress {
 
 export interface ClipData {
   id: number;
-  start: string; // formato "MM:SS" ou "HH:MM:SS"
-  end: string;   // formato "MM:SS" ou "HH:MM:SS"
+  startTime: number; // em segundos
+  endTime: number;   // em segundos
   title: string;
-  score: number;
-  type: string;
+  viralPotential: number;
+  description: string;
 }
 
 interface UseFFmpegReturn {
+  isSupported: boolean;
   isLoaded: boolean;
   isProcessing: boolean;
   progress: ProcessingProgress;
   loadFFmpeg: () => Promise<void>;
   processVideo: (videoFile: File, clips: ClipData[]) => Promise<{ [clipId: number]: Blob }>;
   processSingleClip: (videoFile: File, start: string, end: string, title: string) => Promise<Blob>;
+  convertToMP4: (webmBlob: Blob, title: string) => Promise<Blob>;
 }
 
 export const useFFmpeg = (): UseFFmpegReturn => {
@@ -28,6 +30,9 @@ export const useFFmpeg = (): UseFFmpegReturn => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState<ProcessingProgress>({ phase: '', progress: 0 });
   const ffmpegRef = useRef<any>(null);
+
+  // Verificar suporte do navegador
+  const isSupported = typeof window !== 'undefined' && typeof SharedArrayBuffer !== 'undefined';
 
   // Função auxiliar para converter tempo em formato MM:SS ou HH:MM:SS para segundos
   const timeToSeconds = (time: string): number => {
@@ -230,8 +235,8 @@ export const useFFmpeg = (): UseFFmpegReturn => {
           const outputFileName = `clip_${clip.id}.mp4`;
 
           // Calcular duração
-          const startSeconds = timeToSeconds(clip.start);
-          const endSeconds = timeToSeconds(clip.end);
+          const startSeconds = clip.startTime;
+          const endSeconds = clip.endTime;
           const duration = endSeconds - startSeconds;
 
           // Executar comando FFmpeg ULTRA-OTIMIZADO para vídeos longos
@@ -312,13 +317,71 @@ export const useFFmpeg = (): UseFFmpegReturn => {
     }
   };
 
+  // Converter WebM para MP4
+  const convertToMP4 = async (webmBlob: Blob, title: string): Promise<Blob> => {
+    try {
+      if (!ffmpegRef.current || !isLoaded) {
+        await loadFFmpeg();
+      }
+
+      setIsProcessing(true);
+      const ffmpeg = ffmpegRef.current;
+
+      setProgress({ phase: `Convertendo ${title} para MP4...`, progress: 0 });
+
+      const inputFileName = `${title}_input.webm`;
+      const outputFileName = `${title}_output.mp4`;
+
+      const { fetchFile } = await import('@ffmpeg/util');
+
+      // Escrever arquivo WebM
+      await ffmpeg.writeFile(inputFileName, await fetchFile(webmBlob));
+      setProgress({ phase: `Convertendo ${title} para MP4...`, progress: 50 });
+
+      // Converter para MP4
+      await ffmpeg.exec([
+        '-i', inputFileName,
+        '-c:v', 'libx264',
+        '-c:a', 'aac',
+        '-preset', 'fast',
+        '-crf', '23',
+        '-movflags', '+faststart',
+        outputFileName
+      ]);
+
+      const outputData = await ffmpeg.readFile(outputFileName);
+      const mp4Blob = new Blob([outputData], { type: 'video/mp4' });
+
+      setProgress({ phase: `Conversão concluída: ${title}`, progress: 100 });
+
+      // Limpeza
+      try {
+        await ffmpeg.deleteFile(inputFileName);
+        await ffmpeg.deleteFile(outputFileName);
+      } catch (cleanupError) {
+        console.warn('Erro na limpeza:', cleanupError);
+      }
+
+      setIsProcessing(false);
+      return mp4Blob;
+
+    } catch (error) {
+      console.error('Erro na conversão para MP4:', error);
+      setIsProcessing(false);
+      setProgress({ phase: 'Erro na conversão', progress: 0 });
+      throw error;
+    }
+  };
+
   return {
+    isSupported,
     isLoaded,
     isProcessing,
     progress,
     loadFFmpeg,
     processVideo,
-    processSingleClip
+    processSingleClip,
+    convertToMP4
   };
 };
 

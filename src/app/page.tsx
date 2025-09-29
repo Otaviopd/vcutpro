@@ -64,7 +64,9 @@ export default function VCutPlatform() {
       const processedClips = [];
 
       for (const clip of clipsToProcess) {
-        const blob = await ffmpeg.processSingleClip(videoFile, clip.startTime, clip.endTime, clip.title);
+        const startTime = `${Math.floor(clip.startTime / 60)}:${(clip.startTime % 60).toString().padStart(2, '0')}`;
+        const endTime = `${Math.floor(clip.endTime / 60)}:${(clip.endTime % 60).toString().padStart(2, '0')}`;
+        const blob = await ffmpeg.processSingleClip(videoFile, startTime, endTime, clip.title);
         processedClips.push({
           id: clip.id,
           webmBlob: blob,
@@ -72,7 +74,7 @@ export default function VCutPlatform() {
         });
         
         // Download automático
-        downloadBlob(blob, `${clip.title}.webm`);
+        downloadBlob(blob, `${clip.title}.mp4`);
       }
 
       setDownloadedClips(processedClips);
