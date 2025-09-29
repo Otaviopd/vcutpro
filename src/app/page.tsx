@@ -15,6 +15,14 @@ export default function VCutPlatform() {
   const [isMounted, setIsMounted] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [downloadedClips, setDownloadedClips] = useState<{id: number, webmBlob: Blob, title: string}[]>([]);
+  const [processingMode, setProcessingMode] = useState<'auto' | 'custom'>('auto');
+  const [videoDuration, setVideoDuration] = useState<number>(0);
+  
+  // Estados para corte personalizado
+  const [customStartTime, setCustomStartTime] = useState<string>('00:00');
+  const [customEndTime, setCustomEndTime] = useState<string>('00:30');
+  const [customTitle, setCustomTitle] = useState<string>('');
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   
@@ -24,6 +32,44 @@ export default function VCutPlatform() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Gerar minutagem aleatória para clips automáticos
+  const generateRandomClips = (duration: number): ClipData[] => {
+    const clips: ClipData[] = [];
+    const clipDuration = Math.max(30, Math.min(60, duration / 15)); // Entre 30-60s
+    const totalClips = 10;
+    
+    // Dividir o vídeo em segmentos e pegar clips aleatórios
+    const segmentSize = Math.max(clipDuration * 2, duration / totalClips);
+    
+    for (let i = 0; i < totalClips; i++) {
+      const segmentStart = i * segmentSize;
+      const segmentEnd = Math.min((i + 1) * segmentSize, duration - clipDuration);
+      
+      // Posição aleatória dentro do segmento
+      const randomStart = segmentStart + Math.random() * Math.max(0, segmentEnd - segmentStart);
+      const startTime = Math.max(0, Math.min(randomStart, duration - clipDuration));
+      const endTime = Math.min(startTime + clipDuration, duration);
+      
+      // Converter para formato MM:SS
+      const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      };
+      
+      clips.push({
+        id: i,
+        start: formatTime(startTime),
+        end: formatTime(endTime),
+        title: `Clip Viral ${i + 1}`,
+        viralPotential: Math.floor(Math.random() * 40) + 60,
+        description: `Clip otimizado para redes sociais - ${Math.floor(endTime - startTime)}s de conteúdo viral`
+      });
+    }
+    
+    return clips;
+  };
 
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,24 +81,24 @@ export default function VCutPlatform() {
       setSelectedClips([]);
       setDownloadedClips([]);
       
-      // Simular análise
-      setTimeout(() => {
-        setAnalysisComplete(true);
-        setViralScore(Math.floor(Math.random() * 40) + 60);
+      // Obter duração do vídeo
+      const video = document.createElement('video');
+      video.onloadedmetadata = () => {
+        const duration = video.duration;
+        setVideoDuration(duration);
         
-        // Gerar clips automáticos
-        const clips: ClipData[] = Array.from({ length: 10 }, (_, i) => ({
-          id: i,
-          startTime: i * 30,
-          endTime: (i * 30) + 30,
-          title: `Clip ${i + 1}`,
-          viralPotential: Math.floor(Math.random() * 40) + 60,
-          description: `Clip viral ${i + 1} - Potencial alto para redes sociais`
-        }));
-        
-        setGeneratedClips(clips);
-        setSelectedClips(clips.map(c => c.id));
-      }, 3000);
+        // Simular análise rápida
+        setTimeout(() => {
+          setAnalysisComplete(true);
+          setViralScore(Math.floor(Math.random() * 40) + 60);
+          
+          // Gerar clips com minutagem aleatória
+          const clips = generateRandomClips(duration);
+          setGeneratedClips(clips);
+          setSelectedClips(clips.map(c => c.id));
+        }, 2000);
+      };
+      video.src = URL.createObjectURL(file);
     }
   };
 
@@ -64,9 +110,7 @@ export default function VCutPlatform() {
       const processedClips = [];
 
       for (const clip of clipsToProcess) {
-        const startTime = `${Math.floor(clip.startTime / 60)}:${(clip.startTime % 60).toString().padStart(2, '0')}`;
-        const endTime = `${Math.floor(clip.endTime / 60)}:${(clip.endTime % 60).toString().padStart(2, '0')}`;
-        const blob = await ffmpeg.processSingleClip(videoFile, startTime, endTime, clip.title);
+        const blob = await ffmpeg.processSingleClip(videoFile, clip.start, clip.end, clip.title);
         processedClips.push({
           id: clip.id,
           webmBlob: blob,
@@ -74,7 +118,7 @@ export default function VCutPlatform() {
         });
         
         // Download automático
-        downloadBlob(blob, `${clip.title}.mp4`);
+        downloadBlob(blob, `${clip.title}.webm`);
       }
 
       setDownloadedClips(processedClips);
@@ -84,24 +128,24 @@ export default function VCutPlatform() {
     }
   };
 
-  const convertClipsToMP4 = async (clipIds: number[]) => {
-    if (!ffmpeg.isSupported) return;
-    
-    setIsConverting(true);
+  // Processar corte personalizado
+  const processCustomClip = async () => {
+    if (!videoFile || !ffmpeg.isSupported) return;
+
     try {
-      const clipsToConvert = downloadedClips.filter(clip => clipIds.includes(clip.id));
+      const title = customTitle || `Corte_${customStartTime}_${customEndTime}`;
+      const blob = await ffmpeg.processSingleClip(videoFile, customStartTime, customEndTime, title);
       
-      for (const clip of clipsToConvert) {
-        const mp4Blob = await ffmpeg.convertToMP4(clip.webmBlob, clip.title);
-        downloadBlob(mp4Blob, `${clip.title}.mp4`);
-      }
+      // Download automático
+      downloadBlob(blob, `${title}.webm`);
+      
+      alert('Corte personalizado processado e baixado!');
     } catch (error) {
-      console.error('Erro na conversão:', error);
-      alert('Erro ao converter para MP4. Tente novamente.');
-    } finally {
-      setIsConverting(false);
+      console.error('Erro no corte personalizado:', error);
+      alert('Erro ao processar corte personalizado. Tente novamente.');
     }
   };
+
 
   const toggleClipSelection = (clipId: number) => {
     setSelectedClips(prev => 
