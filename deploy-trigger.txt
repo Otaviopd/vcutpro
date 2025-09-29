@@ -1,0 +1,4 @@
+Deploy trigger: 2025-09-29 13:44:27
+Force deploy for user request
+Interface corrections applied
+FFmpeg working properly
