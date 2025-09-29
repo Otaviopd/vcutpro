@@ -3,6 +3,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { Button } from "../componentes/ui/button";
 import { Input } from "../componentes/ui/input";
 import { useFFmpeg, downloadBlob, type ClipData } from "../hooks/useFFmpeg";
+import { useIntelligentProcessor } from "../hooks/useIntelligentProcessor";
+import { IntelligentProcessor } from "../components/IntelligentProcessor";
 import { useAuthHook } from "../hooks/useAuth";
 import LoginScreen from "../componentes/LoginScreen";
 
@@ -15,7 +17,7 @@ export default function VCutPlatform() {
   const [isMounted, setIsMounted] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [downloadedClips, setDownloadedClips] = useState<{id: number, webmBlob: Blob, title: string}[]>([]);
-  const [processingMode, setProcessingMode] = useState<'auto' | 'custom'>('auto');
+  const [processingMode, setProcessingMode] = useState<'auto' | 'custom' | 'intelligent'>('intelligent');
   const [videoDuration, setVideoDuration] = useState<number>(0);
   
   // Estados para corte personalizado
@@ -27,6 +29,7 @@ export default function VCutPlatform() {
   const videoRef = useRef<HTMLVideoElement>(null);
   
   const ffmpeg = useFFmpeg();
+  const intelligentProcessor = useIntelligentProcessor();
   const auth = useAuthHook();
 
   useEffect(() => {
@@ -153,6 +156,12 @@ export default function VCutPlatform() {
         ? prev.filter(id => id !== clipId)
         : [...prev, clipId]
     );
+  };
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   if (!isMounted) {
@@ -285,6 +294,58 @@ export default function VCutPlatform() {
             </div>
           ) : (
             <div className="space-y-8">
+              {/* Mode Selection */}
+              <div className="relative">
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-2xl blur-xl" />
+                <div className="relative bg-black/80 backdrop-blur-xl rounded-2xl p-8 border border-white/10">
+                  <h3 className="text-xl font-black text-white tracking-[-0.02em] mb-6">Escolha o Modo de Processamento</h3>
+                  
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <Button
+                      onClick={() => setProcessingMode('intelligent')}
+                      variant={processingMode === 'intelligent' ? 'default' : 'outline'}
+                      className={`h-20 flex flex-col gap-2 ${processingMode === 'intelligent' ? 'bg-gradient-to-r from-purple-600 to-blue-600' : 'border-white/20 text-white/80'}`}
+                    >
+                      <span className="text-2xl">🤖</span>
+                      <span className="font-bold">IA Inteligente</span>
+                      <span className="text-xs opacity-80">Whisper + NLP</span>
+                    </Button>
+                    <Button
+                      onClick={() => setProcessingMode('auto')}
+                      variant={processingMode === 'auto' ? 'default' : 'outline'}
+                      className={`h-20 flex flex-col gap-2 ${processingMode === 'auto' ? 'bg-gradient-to-r from-green-600 to-emerald-600' : 'border-white/20 text-white/80'}`}
+                    >
+                      <span className="text-2xl">⚡</span>
+                      <span className="font-bold">Clips Automáticos</span>
+                      <span className="text-xs opacity-80">10 clips aleatórios</span>
+                    </Button>
+                    <Button
+                      onClick={() => setProcessingMode('custom')}
+                      variant={processingMode === 'custom' ? 'default' : 'outline'}
+                      className={`h-20 flex flex-col gap-2 ${processingMode === 'custom' ? 'bg-gradient-to-r from-orange-600 to-red-600' : 'border-white/20 text-white/80'}`}
+                    >
+                      <span className="text-2xl">✂️</span>
+                      <span className="font-bold">Corte Manual</span>
+                      <span className="text-xs opacity-80">Minutagem específica</span>
+                    </Button>
+                  </div>
+
+                  <div className="text-center text-white/60 text-sm">
+                    Vídeo: {videoFile.name} • Duração: {formatTime(videoDuration)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Renderizar componente baseado no modo */}
+              {processingMode === 'intelligent' ? (
+                <IntelligentProcessor 
+                  videoFile={videoFile} 
+                  onComplete={(clips) => {
+                    console.log('Clips inteligentes gerados:', clips);
+                  }} 
+                />
+              ) : (
+                <>
               {/* Video Analysis */}
               {!analysisComplete ? (
                 <div className="relative">
@@ -514,6 +575,8 @@ export default function VCutPlatform() {
                     </div>
                   </div>
                 </>
+                )}
+              </>
               )}
             </div>
           )}
