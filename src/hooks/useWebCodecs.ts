@@ -10,8 +10,8 @@ export interface ClipData {
   start: string;
   end: string;
   title: string;
-  score: number;
-  type: string;
+  viralPotential: number;
+  description: string;
 }
 
 interface UseWebCodecsReturn {
@@ -230,6 +230,18 @@ export const useWebCodecs = (): UseWebCodecsReturn => {
     processVideo,
     processSingleClip
   };
+};
+
+// Função para download automático
+export const downloadBlob = (blob: Blob, filename: string) => {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 };
 
 export default useWebCodecs;

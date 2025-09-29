@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "../componentes/ui/button";
 import { Input } from "../componentes/ui/input";
-import { useFFmpeg, downloadBlob, type ClipData } from "../hooks/useFFmpeg";
+import { useWebCodecs, downloadBlob, type ClipData } from "../hooks/useWebCodecs";
 import { useAuthHook } from "../hooks/useAuth";
 import LoginScreen from "../componentes/LoginScreen";
 
@@ -26,7 +26,7 @@ export default function VCutPlatform() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   
-  const ffmpeg = useFFmpeg();
+  const webcodecs = useWebCodecs();
   const auth = useAuthHook();
 
   useEffect(() => {
@@ -103,14 +103,14 @@ export default function VCutPlatform() {
   };
 
   const processSelectedClips = async () => {
-    if (!videoFile || selectedClips.length === 0 || !ffmpeg.isSupported) return;
+    if (!videoFile || selectedClips.length === 0 || !webcodecs.isSupported) return;
 
     try {
       const clipsToProcess = generatedClips.filter(clip => selectedClips.includes(clip.id));
       const processedClips = [];
 
       for (const clip of clipsToProcess) {
-        const blob = await ffmpeg.processSingleClip(videoFile, clip.start, clip.end, clip.title);
+        const blob = await webcodecs.processSingleClip(videoFile, clip.start, clip.end, clip.title);
         processedClips.push({
           id: clip.id,
           webmBlob: blob,
@@ -130,11 +130,11 @@ export default function VCutPlatform() {
 
   // Processar corte personalizado
   const processCustomClip = async () => {
-    if (!videoFile || !ffmpeg.isSupported) return;
+    if (!videoFile || !webcodecs.isSupported) return;
 
     try {
       const title = customTitle || `Corte_${customStartTime}_${customEndTime}`;
-      const blob = await ffmpeg.processSingleClip(videoFile, customStartTime, customEndTime, title);
+      const blob = await webcodecs.processSingleClip(videoFile, customStartTime, customEndTime, title);
       
       // Download automático
       downloadBlob(blob, `${title}.webm`);
@@ -367,7 +367,7 @@ export default function VCutPlatform() {
                             </div>
                             <p className="text-white/60 text-sm mb-3">{clip.description}</p>
                             <div className="text-white/50 text-xs">
-                              {Math.floor(clip.startTime / 60)}:{(clip.startTime % 60).toString().padStart(2, '0')} - {Math.floor(clip.endTime / 60)}:{(clip.endTime % 60).toString().padStart(2, '0')}
+                              {clip.start} - {clip.end}
                             </div>
                           </div>
                         ))}

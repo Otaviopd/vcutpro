@@ -7,8 +7,8 @@ export interface ProcessingProgress {
 
 export interface ClipData {
   id: number;
-  startTime: number; // em segundos
-  endTime: number;   // em segundos
+  start: string; // formato "MM:SS"
+  end: string;   // formato "MM:SS"
   title: string;
   viralPotential: number;
   description: string;
@@ -235,8 +235,8 @@ export const useFFmpeg = (): UseFFmpegReturn => {
           const outputFileName = `clip_${clip.id}.mp4`;
 
           // Calcular duração
-          const startSeconds = clip.startTime;
-          const endSeconds = clip.endTime;
+          const startSeconds = timeToSeconds(clip.start);
+          const endSeconds = timeToSeconds(clip.end);
           const duration = endSeconds - startSeconds;
 
           // Executar comando FFmpeg ULTRA-OTIMIZADO para vídeos longos
