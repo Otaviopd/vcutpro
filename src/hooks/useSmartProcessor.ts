@@ -245,6 +245,9 @@ export const useSmartProcessor = (): UseSmartProcessorReturn => {
         video.currentTime = startSeconds;
         
         video.onseeked = () => {
+          // Desenhar primeiro frame antes de iniciar gravação
+          drawVerticalFrame(ctx, video, canvas);
+          
           const chunks: Blob[] = [];
           const stream = canvas.captureStream(30);
           
@@ -298,34 +301,46 @@ export const useSmartProcessor = (): UseSmartProcessorReturn => {
             }
           };
 
-          mediaRecorder.start();
-          
-          const startTime = Date.now();
-          const targetDuration = duration * 1000;
-
-          const renderFrame = () => {
-            const elapsed = Date.now() - startTime;
+          // Aguardar um pouco antes de começar para estabilizar
+          setTimeout(() => {
+            mediaRecorder.start();
             
-            if (elapsed >= targetDuration) {
-              mediaRecorder.stop();
-              return;
-            }
+            const startTime = Date.now();
+            const targetDuration = duration * 1000;
 
-            // Melhor sincronização de tempo
-            const currentVideoTime = startSeconds + (elapsed / 1000);
-            if (Math.abs(video.currentTime - currentVideoTime) > 0.1) {
-              video.currentTime = currentVideoTime;
-            }
-            
-            // Aguardar o vídeo estar pronto antes de desenhar
-            if (video.readyState >= 2) {
+            let frameCount = 0;
+            const fps = 30;
+            const frameInterval = 1000 / fps;
+
+            const renderFrame = () => {
+              const elapsed = Date.now() - startTime;
+              
+              if (elapsed >= targetDuration) {
+                mediaRecorder.stop();
+                return;
+              }
+
+              // Calcular tempo do vídeo baseado em frames
+              const targetVideoTime = startSeconds + (frameCount / fps);
+              
+              // Só avançar se necessário (evitar seeks desnecessários)
+              if (Math.abs(video.currentTime - targetVideoTime) > 0.2) {
+                video.currentTime = targetVideoTime;
+              }
+              
+              // Sempre desenhar o frame atual (mesmo se não mudou)
               drawVerticalFrame(ctx, video, canvas);
-            }
-            
-            requestAnimationFrame(renderFrame);
-          };
+              
+              frameCount++;
+              
+              // Usar setTimeout para controle preciso de FPS
+              setTimeout(() => {
+                requestAnimationFrame(renderFrame);
+              }, frameInterval);
+            };
 
-          renderFrame();
+            renderFrame();
+          }, 100); // 100ms de pausa para estabilizar
         };
       };
 
