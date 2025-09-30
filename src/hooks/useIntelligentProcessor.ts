@@ -34,10 +34,8 @@ export const useIntelligentProcessor = (): UseIntelligentProcessorReturn => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState<ProcessingProgress>({ phase: '', progress: 0 });
 
-  // API Base URL (ajustar conforme ambiente)
-  const API_BASE = process.env.NODE_ENV === 'production' 
-    ? 'https://your-backend-url.com' 
-    : 'http://localhost:8000';
+  // Usar sistema atual (sem backend separado)
+  const API_BASE = null; // Processamento local
 
   // Verificar suporte (sempre true para o novo sistema)
   const isSupported = true;

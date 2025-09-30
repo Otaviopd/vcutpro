@@ -73,7 +73,7 @@ export default function VCutPlatform() {
 
       for (const clip of clipsToProcess) {
         const blob = await smartProcessor.processSingleClip(videoFile, clip.start, clip.end, clip.title);
-        downloadBlob(blob, `${clip.title}_TikTok.mp4`);
+        downloadBlob(blob, `${clip.title}_vertical.webm`);
       }
       
       alert(`${clipsToProcess.length} clips processados e baixados!`);
@@ -91,7 +91,7 @@ export default function VCutPlatform() {
       const title = customTitle || `Corte_${customStartTime}_${customEndTime}`;
       const blob = await smartProcessor.processSingleClip(videoFile, customStartTime, customEndTime, title);
       
-      downloadBlob(blob, `${title}_TikTok.mp4`);
+      downloadBlob(blob, `${title}_vertical.webm`);
       
       alert('Corte manual processado e baixado!');
     } catch (error) {
@@ -112,76 +112,6 @@ export default function VCutPlatform() {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  // Preview de clip
-  const previewClip = (clip: SmartClipData) => {
-    if (!videoFile) return;
-    
-    const video = document.createElement('video');
-    video.src = URL.createObjectURL(videoFile);
-    video.controls = true;
-    video.style.width = '300px';
-    video.style.height = '533px'; // 9:16 ratio
-    video.style.objectFit = 'cover';
-    
-    const startSeconds = timeToSeconds(clip.start);
-    video.currentTime = startSeconds;
-    
-    // Criar modal de preview
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.9); display: flex; align-items: center;
-      justify-content: center; z-index: 1000;
-    `;
-    
-    const content = document.createElement('div');
-    content.style.cssText = `
-      background: #1a1a1a; padding: 20px; border-radius: 12px;
-      text-align: center; color: white;
-    `;
-    
-    const title = document.createElement('h3');
-    title.textContent = `Preview: ${clip.title}`;
-    title.style.marginBottom = '10px';
-    
-    const info = document.createElement('p');
-    info.textContent = `${clip.start} - ${clip.end} • Score: ${clip.viralPotential}%`;
-    info.style.fontSize = '14px';
-    info.style.color = '#888';
-    info.style.marginBottom = '15px';
-    
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = '✕ Fechar';
-    closeBtn.style.cssText = `
-      margin-top: 15px; padding: 8px 16px; background: #333;
-      color: white; border: none; border-radius: 6px; cursor: pointer;
-    `;
-    
-    closeBtn.onclick = () => {
-      document.body.removeChild(modal);
-      video.pause();
-    };
-    
-    content.appendChild(title);
-    content.appendChild(info);
-    content.appendChild(video);
-    content.appendChild(closeBtn);
-    modal.appendChild(content);
-    document.body.appendChild(modal);
-    
-    modal.onclick = (e) => {
-      if (e.target === modal) {
-        document.body.removeChild(modal);
-        video.pause();
-      }
-    };
-  };
-
-  const timeToSeconds = (time: string): number => {
-    const [minutes, seconds] = time.split(':').map(Number);
-    return minutes * 60 + seconds;
   };
 
   if (!isMounted) {
@@ -439,34 +369,12 @@ export default function VCutPlatform() {
                                 </div>
                                 
                                 <div className="mt-3 pt-3 border-t border-white/10">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center gap-2 text-xs text-white/50">
-                                      <span>🎯 Score: {clip.impactScore}</span>
-                                      <span>•</span>
-                                      <span>📱 9:16</span>
-                                      <span>•</span>
-                                      <span>🔥 MP4</span>
-                                    </div>
-                                    <Button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        previewClip(clip);
-                                      }}
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-6 px-2 text-xs border-white/20 text-white/60 hover:bg-white/10"
-                                    >
-                                      👁️ Preview
-                                    </Button>
-                                  </div>
-                                  
-                                  {/* Viral Factors */}
-                                  <div className="flex flex-wrap gap-1">
-                                    {clip.keywords.slice(0, 2).map((keyword, i) => (
-                                      <span key={i} className="px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded-full">
-                                        {keyword}
-                                      </span>
-                                    ))}
+                                  <div className="flex items-center gap-2 text-xs text-white/50">
+                                    <span>🎯 Score: {clip.impactScore}</span>
+                                    <span>•</span>
+                                    <span>📱 Vertical 9:16</span>
+                                    <span>•</span>
+                                    <span>🔥 Qualidade Original</span>
                                   </div>
                                 </div>
                               </div>
