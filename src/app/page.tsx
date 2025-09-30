@@ -15,6 +15,9 @@ export default function VCutPlatform() {
   const [isMounted, setIsMounted] = useState(false);
   const [processingMode, setProcessingMode] = useState<'smart' | 'manual'>('smart');
   const [videoDuration, setVideoDuration] = useState<number>(0);
+  const [isProcessingClips, setIsProcessingClips] = useState(false);
+  const [isProcessingManual, setIsProcessingManual] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState(0);
   
   // Estados para corte manual
   const [customStartTime, setCustomStartTime] = useState<string>('00:00');
@@ -69,16 +72,32 @@ export default function VCutPlatform() {
     if (!videoFile || selectedClips.length === 0) return;
 
     try {
+      setIsProcessingClips(true);
+      setProcessingProgress(0);
+      
       const clipsToProcess = generatedClips.filter(clip => selectedClips.includes(clip.id));
-
-      for (const clip of clipsToProcess) {
+      
+      for (let i = 0; i < clipsToProcess.length; i++) {
+        const clip = clipsToProcess[i];
+        setProcessingProgress(Math.floor((i / clipsToProcess.length) * 100));
+        
         const blob = await smartProcessor.processSingleClip(videoFile, clip.start, clip.end, clip.title);
         downloadBlob(blob, `${clip.title}_TikTok.mp4`);
+        
+        // Pequena pausa entre downloads
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
       
-      alert(`${clipsToProcess.length} clips processados e baixados!`);
+      setProcessingProgress(100);
+      setTimeout(() => {
+        setIsProcessingClips(false);
+        setProcessingProgress(0);
+      }, 1000);
+      
     } catch (error) {
       console.error('Erro no processamento:', error);
+      setIsProcessingClips(false);
+      setProcessingProgress(0);
       alert('Erro ao processar clips. Tente novamente.');
     }
   };
@@ -88,14 +107,32 @@ export default function VCutPlatform() {
     if (!videoFile) return;
 
     try {
+      setIsProcessingManual(true);
+      setProcessingProgress(0);
+      
       const title = customTitle || `Corte_${customStartTime}_${customEndTime}`;
+      
+      // Simular progresso
+      const progressInterval = setInterval(() => {
+        setProcessingProgress(prev => Math.min(prev + 10, 90));
+      }, 200);
+      
       const blob = await smartProcessor.processSingleClip(videoFile, customStartTime, customEndTime, title);
+      
+      clearInterval(progressInterval);
+      setProcessingProgress(100);
       
       downloadBlob(blob, `${title}_TikTok.mp4`);
       
-      alert('Corte manual processado e baixado!');
+      setTimeout(() => {
+        setIsProcessingManual(false);
+        setProcessingProgress(0);
+      }, 1000);
+      
     } catch (error) {
       console.error('Erro no corte manual:', error);
+      setIsProcessingManual(false);
+      setProcessingProgress(0);
       alert('Erro ao processar corte. Tente novamente.');
     }
   };
@@ -292,35 +329,171 @@ export default function VCutPlatform() {
             </div>
           ) : (
             <div className="space-y-8">
-              {/* Mode Selection */}
-              <div className="relative">
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-2xl blur-xl" />
-                <div className="relative bg-black/80 backdrop-blur-xl rounded-2xl p-8 border border-white/10">
-                  <h3 className="text-xl font-black text-white tracking-[-0.02em] mb-6">Escolha o Modo de Processamento</h3>
+              {/* Premium Mode Selection */}
+              <div className="relative group">
+                <div className="absolute -inset-2 bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 rounded-3xl blur-2xl opacity-30 group-hover:opacity-50 transition-all duration-500" />
+                <div className="relative bg-gradient-to-br from-gray-900/95 to-black/95 backdrop-blur-2xl rounded-3xl p-10 border border-white/20 shadow-2xl">
                   
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <Button
-                      onClick={() => setProcessingMode('smart')}
-                      variant={processingMode === 'smart' ? 'default' : 'outline'}
-                      className={`h-20 flex flex-col gap-2 ${processingMode === 'smart' ? 'bg-gradient-to-r from-purple-600 to-blue-600' : 'border-white/20 text-white/80'}`}
-                    >
-                      <span className="text-2xl">🤖</span>
-                      <span className="font-bold">IA Inteligente</span>
-                      <span className="text-xs opacity-80">10 clips automáticos</span>
-                    </Button>
-                    <Button
-                      onClick={() => setProcessingMode('manual')}
-                      variant={processingMode === 'manual' ? 'default' : 'outline'}
-                      className={`h-20 flex flex-col gap-2 ${processingMode === 'manual' ? 'bg-gradient-to-r from-orange-600 to-red-600' : 'border-white/20 text-white/80'}`}
-                    >
-                      <span className="text-2xl">✂️</span>
-                      <span className="font-bold">Corte Manual</span>
-                      <span className="text-xs opacity-80">Minutagem específica</span>
-                    </Button>
+                  {/* Header Premium */}
+                  <div className="text-center mb-8">
+                    <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-full border border-purple-500/30 mb-4">
+                      <div className="w-3 h-3 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full animate-pulse" />
+                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 font-bold text-sm tracking-wider uppercase">
+                        Sistema Profissional Ativo
+                      </span>
+                    </div>
+                    <h2 className="text-4xl font-black text-white mb-3 tracking-tight">
+                      Escolha Seu <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400">Método</span>
+                    </h2>
+                    <p className="text-white/60 text-lg font-medium">
+                      Tecnologia de ponta para resultados profissionais
+                    </p>
                   </div>
 
-                  <div className="text-center text-white/60 text-sm">
-                    Vídeo: {videoFile.name} • Duração: {formatTime(videoDuration)}
+                  {/* Premium Mode Cards */}
+                  <div className="grid grid-cols-2 gap-8 mb-8">
+                    
+                    {/* IA Inteligente Card */}
+                    <div 
+                      onClick={() => {
+                        setProcessingMode('smart');
+                        if (!analysisComplete) {
+                          processVideoWithAI();
+                        }
+                      }}
+                      className={`group/card relative cursor-pointer transition-all duration-500 ${
+                        processingMode === 'smart' 
+                          ? 'scale-105 shadow-2xl shadow-purple-500/25' 
+                          : 'hover:scale-102 hover:shadow-xl'
+                      }`}
+                    >
+                      <div className={`absolute -inset-1 rounded-2xl blur-xl transition-all duration-500 ${
+                        processingMode === 'smart'
+                          ? 'bg-gradient-to-r from-purple-500 to-blue-500 opacity-60'
+                          : 'bg-gradient-to-r from-purple-500/20 to-blue-500/20 opacity-0 group-hover/card:opacity-40'
+                      }`} />
+                      
+                      <div className={`relative h-40 rounded-2xl border-2 transition-all duration-500 overflow-hidden ${
+                        processingMode === 'smart'
+                          ? 'bg-gradient-to-br from-purple-600/20 to-blue-600/20 border-purple-400/50'
+                          : 'bg-gradient-to-br from-gray-800/50 to-gray-900/50 border-white/10 group-hover/card:border-purple-400/30'
+                      }`}>
+                        
+                        {/* Background Pattern */}
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(147,51,234,0.1),transparent_70%)]" />
+                        
+                        <div className="relative h-full flex flex-col items-center justify-center p-6 text-center">
+                          {/* Icon */}
+                          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-all duration-500 ${
+                            processingMode === 'smart'
+                              ? 'bg-gradient-to-br from-purple-500 to-blue-500 shadow-lg shadow-purple-500/30'
+                              : 'bg-gradient-to-br from-gray-700 to-gray-800 group-hover/card:from-purple-500/50 group-hover/card:to-blue-500/50'
+                          }`}>
+                            <span className="text-3xl">🤖</span>
+                          </div>
+                          
+                          {/* Content */}
+                          <h3 className={`text-xl font-black mb-2 transition-all duration-300 ${
+                            processingMode === 'smart'
+                              ? 'text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400'
+                              : 'text-white group-hover/card:text-purple-300'
+                          }`}>
+                            IA Inteligente
+                          </h3>
+                          
+                          <p className="text-white/60 text-sm font-medium mb-3 leading-relaxed">
+                            Análise automática com algoritmo viral
+                          </p>
+                          
+                          <div className="flex items-center gap-2 text-xs">
+                            <div className="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full font-medium">
+                              10 Clips
+                            </div>
+                            <div className="px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full font-medium">
+                              Score IA
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Corte Manual Card */}
+                    <div 
+                      onClick={() => setProcessingMode('manual')}
+                      className={`group/card relative cursor-pointer transition-all duration-500 ${
+                        processingMode === 'manual' 
+                          ? 'scale-105 shadow-2xl shadow-orange-500/25' 
+                          : 'hover:scale-102 hover:shadow-xl'
+                      }`}
+                    >
+                      <div className={`absolute -inset-1 rounded-2xl blur-xl transition-all duration-500 ${
+                        processingMode === 'manual'
+                          ? 'bg-gradient-to-r from-orange-500 to-red-500 opacity-60'
+                          : 'bg-gradient-to-r from-orange-500/20 to-red-500/20 opacity-0 group-hover/card:opacity-40'
+                      }`} />
+                      
+                      <div className={`relative h-40 rounded-2xl border-2 transition-all duration-500 overflow-hidden ${
+                        processingMode === 'manual'
+                          ? 'bg-gradient-to-br from-orange-600/20 to-red-600/20 border-orange-400/50'
+                          : 'bg-gradient-to-br from-gray-800/50 to-gray-900/50 border-white/10 group-hover/card:border-orange-400/30'
+                      }`}>
+                        
+                        {/* Background Pattern */}
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(251,146,60,0.1),transparent_70%)]" />
+                        
+                        <div className="relative h-full flex flex-col items-center justify-center p-6 text-center">
+                          {/* Icon */}
+                          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-all duration-500 ${
+                            processingMode === 'manual'
+                              ? 'bg-gradient-to-br from-orange-500 to-red-500 shadow-lg shadow-orange-500/30'
+                              : 'bg-gradient-to-br from-gray-700 to-gray-800 group-hover/card:from-orange-500/50 group-hover/card:to-red-500/50'
+                          }`}>
+                            <span className="text-3xl">✂️</span>
+                          </div>
+                          
+                          {/* Content */}
+                          <h3 className={`text-xl font-black mb-2 transition-all duration-300 ${
+                            processingMode === 'manual'
+                              ? 'text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400'
+                              : 'text-white group-hover/card:text-orange-300'
+                          }`}>
+                            Corte Manual
+                          </h3>
+                          
+                          <p className="text-white/60 text-sm font-medium mb-3 leading-relaxed">
+                            Controle total com minutagem específica
+                          </p>
+                          
+                          <div className="flex items-center gap-2 text-xs">
+                            <div className="px-3 py-1 bg-orange-500/20 text-orange-300 rounded-full font-medium">
+                              Precisão
+                            </div>
+                            <div className="px-3 py-1 bg-red-500/20 text-red-300 rounded-full font-medium">
+                              Customizado
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Video Info Premium */}
+                  <div className="text-center">
+                    <div className="inline-flex items-center gap-4 px-6 py-3 bg-gradient-to-r from-white/5 to-white/10 rounded-2xl border border-white/10 backdrop-blur-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                        <span className="text-white/80 font-medium text-sm">
+                          {videoFile.name}
+                        </span>
+                      </div>
+                      <div className="w-px h-4 bg-white/20" />
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">⏱️</span>
+                        <span className="text-white/80 font-bold text-sm">
+                          {formatTime(videoDuration)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -394,10 +567,24 @@ export default function VCutPlatform() {
                             </h3>
                             <Button
                               onClick={processSelectedClips}
-                              disabled={selectedClips.length === 0}
-                              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50"
+                              disabled={selectedClips.length === 0 || isProcessingClips}
+                              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 relative overflow-hidden"
                             >
-                              📥 Baixar {selectedClips.length} Clips
+                              {isProcessingClips ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                  <span>Processando... {processingProgress}%</span>
+                                </div>
+                              ) : (
+                                <span>📥 Baixar {selectedClips.length} Clips</span>
+                              )}
+                              
+                              {isProcessingClips && (
+                                <div 
+                                  className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-green-400 to-blue-400 transition-all duration-300"
+                                  style={{ width: `${processingProgress}%` }}
+                                />
+                              )}
                             </Button>
                           </div>
 
@@ -496,64 +683,160 @@ export default function VCutPlatform() {
                 </>
               )}
 
-              {/* Manual Mode */}
+              {/* Premium Manual Mode */}
               {processingMode === 'manual' && (
-                <div className="relative">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-red-500/20 to-pink-500/20 rounded-2xl blur-xl" />
-                  <div className="relative bg-black/80 backdrop-blur-xl rounded-2xl p-8 border border-white/10">
-                    <h3 className="text-xl font-black text-white tracking-[-0.02em] mb-6">
-                      ✂️ Corte Manual Personalizado
-                    </h3>
+                <div className="relative group">
+                  <div className="absolute -inset-2 bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 rounded-3xl blur-2xl opacity-30 group-hover:opacity-50 transition-all duration-500" />
+                  <div className="relative bg-gradient-to-br from-gray-900/95 to-black/95 backdrop-blur-2xl rounded-3xl p-10 border border-orange-500/20 shadow-2xl">
                     
-                    <div className="grid grid-cols-2 gap-6 mb-6">
-                      <div>
-                        <label className="block text-white/60 text-sm font-medium mb-2">
-                          Tempo Inicial (MM:SS)
-                        </label>
-                        <Input
-                          type="text"
-                          value={customStartTime}
-                          onChange={(e) => setCustomStartTime(e.target.value)}
-                          placeholder="00:00"
-                          className="bg-white/5 border-white/20 text-white"
-                        />
+                    {/* Header Premium */}
+                    <div className="text-center mb-8">
+                      <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-full border border-orange-500/30 mb-4">
+                        <div className="w-3 h-3 bg-gradient-to-r from-orange-400 to-red-400 rounded-full animate-pulse" />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400 font-bold text-sm tracking-wider uppercase">
+                          Controle Profissional
+                        </span>
                       </div>
-                      <div>
-                        <label className="block text-white/60 text-sm font-medium mb-2">
-                          Tempo Final (MM:SS)
+                      <h2 className="text-4xl font-black text-white mb-3 tracking-tight">
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-red-400 to-pink-400">Corte</span> Personalizado
+                      </h2>
+                      <p className="text-white/60 text-lg font-medium">
+                        Precisão cirúrgica para resultados únicos
+                      </p>
+                    </div>
+
+                    {/* Premium Input Grid */}
+                    <div className="grid grid-cols-2 gap-8 mb-8">
+                      <div className="group/input">
+                        <label className="flex items-center gap-2 text-white/80 text-sm font-bold mb-3 tracking-wide uppercase">
+                          <span className="text-lg">🎬</span>
+                          Tempo Inicial
                         </label>
-                        <Input
-                          type="text"
-                          value={customEndTime}
-                          onChange={(e) => setCustomEndTime(e.target.value)}
-                          placeholder="00:30"
-                          className="bg-white/5 border-white/20 text-white"
-                        />
+                        <div className="relative">
+                          <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/30 to-red-500/30 rounded-xl blur opacity-0 group-focus-within/input:opacity-100 transition-all duration-300" />
+                          <Input
+                            type="text"
+                            value={customStartTime}
+                            onChange={(e) => setCustomStartTime(e.target.value)}
+                            placeholder="00:00"
+                            className="relative h-14 bg-gradient-to-r from-gray-800/50 to-gray-900/50 border-2 border-white/10 text-white text-lg font-mono text-center rounded-xl focus:border-orange-400/50 focus:bg-orange-500/5 transition-all duration-300"
+                          />
+                          <div className="absolute inset-y-0 right-4 flex items-center">
+                            <span className="text-orange-400/60 text-sm font-medium">MM:SS</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="group/input">
+                        <label className="flex items-center gap-2 text-white/80 text-sm font-bold mb-3 tracking-wide uppercase">
+                          <span className="text-lg">🏁</span>
+                          Tempo Final
+                        </label>
+                        <div className="relative">
+                          <div className="absolute -inset-1 bg-gradient-to-r from-red-500/30 to-pink-500/30 rounded-xl blur opacity-0 group-focus-within/input:opacity-100 transition-all duration-300" />
+                          <Input
+                            type="text"
+                            value={customEndTime}
+                            onChange={(e) => setCustomEndTime(e.target.value)}
+                            placeholder="00:30"
+                            className="relative h-14 bg-gradient-to-r from-gray-800/50 to-gray-900/50 border-2 border-white/10 text-white text-lg font-mono text-center rounded-xl focus:border-red-400/50 focus:bg-red-500/5 transition-all duration-300"
+                          />
+                          <div className="absolute inset-y-0 right-4 flex items-center">
+                            <span className="text-red-400/60 text-sm font-medium">MM:SS</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="mb-6">
-                      <label className="block text-white/60 text-sm font-medium mb-2">
-                        Título do Clip (opcional)
+                    {/* Premium Title Input */}
+                    <div className="mb-8 group/input">
+                      <label className="flex items-center gap-2 text-white/80 text-sm font-bold mb-3 tracking-wide uppercase">
+                        <span className="text-lg">🏷️</span>
+                        Título do Clip
+                        <span className="text-white/40 text-xs normal-case">(opcional)</span>
                       </label>
-                      <Input
-                        type="text"
-                        value={customTitle}
-                        onChange={(e) => setCustomTitle(e.target.value)}
-                        placeholder="Meu Clip Personalizado"
-                        className="bg-white/5 border-white/20 text-white"
-                      />
+                      <div className="relative">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/30 to-blue-500/30 rounded-xl blur opacity-0 group-focus-within/input:opacity-100 transition-all duration-300" />
+                        <Input
+                          type="text"
+                          value={customTitle}
+                          onChange={(e) => setCustomTitle(e.target.value)}
+                          placeholder="Meu Clip Profissional"
+                          className="relative h-14 bg-gradient-to-r from-gray-800/50 to-gray-900/50 border-2 border-white/10 text-white text-lg rounded-xl focus:border-purple-400/50 focus:bg-purple-500/5 transition-all duration-300 px-6"
+                        />
+                      </div>
                     </div>
 
-                    <Button
-                      onClick={processCustomClip}
-                      className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
-                    >
-                      ✂️ Processar Corte Manual
-                    </Button>
+                    {/* Duration Calculator */}
+                    <div className="mb-8 p-6 bg-gradient-to-r from-white/5 to-white/10 rounded-2xl border border-white/10">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+                            <span className="text-white text-lg">⏱️</span>
+                          </div>
+                          <div>
+                            <h4 className="text-white font-bold text-sm">Duração Calculada</h4>
+                            <p className="text-white/60 text-xs">Tempo total do clip</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
+                            {(() => {
+                              const start = timeToSeconds(customStartTime);
+                              const end = timeToSeconds(customEndTime);
+                              const duration = Math.max(0, end - start);
+                              return `${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')}`;
+                            })()}
+                          </div>
+                          <p className="text-white/50 text-xs">segundos</p>
+                        </div>
+                      </div>
+                    </div>
 
-                    <div className="mt-4 text-center text-white/50 text-xs">
-                      💡 Formato vertical 9:16 com qualidade original mantida
+                    {/* Premium Action Button */}
+                    <div className="relative group/button">
+                      <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl blur opacity-75 group-hover/button:opacity-100 transition-all duration-300" />
+                      <Button
+                        onClick={processCustomClip}
+                        disabled={isProcessingManual}
+                        className="relative w-full h-16 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-black text-lg rounded-2xl shadow-2xl transform transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:scale-100 overflow-hidden"
+                      >
+                        {isProcessingManual ? (
+                          <div className="flex items-center justify-center gap-3">
+                            <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                            <span>Processando Corte... {processingProgress}%</span>
+                          </div>
+                        ) : (
+                          <span className="flex items-center justify-center gap-3">
+                            <span className="text-2xl">✂️</span>
+                            <span>Processar Corte Profissional</span>
+                            <span className="text-2xl">🎯</span>
+                          </span>
+                        )}
+                        
+                        {isProcessingManual && (
+                          <div 
+                            className="absolute bottom-0 left-0 h-2 bg-gradient-to-r from-green-400 via-yellow-400 to-orange-400 transition-all duration-300"
+                            style={{ width: `${processingProgress}%` }}
+                          />
+                        )}
+                      </Button>
+                    </div>
+
+                    {/* Premium Features Info */}
+                    <div className="mt-6 grid grid-cols-3 gap-4 text-center">
+                      <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+                        <div className="text-lg mb-1">📱</div>
+                        <div className="text-white/80 text-xs font-medium">Vertical 9:16</div>
+                      </div>
+                      <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+                        <div className="text-lg mb-1">🔥</div>
+                        <div className="text-white/80 text-xs font-medium">Qualidade Original</div>
+                      </div>
+                      <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+                        <div className="text-lg mb-1">⚡</div>
+                        <div className="text-white/80 text-xs font-medium">MP4 Compatível</div>
+                      </div>
                     </div>
                   </div>
                 </div>

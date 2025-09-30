@@ -249,10 +249,19 @@ export const useSmartProcessor = (): UseSmartProcessorReturn => {
           const stream = canvas.captureStream(30);
           
           // Usar H.264 para máxima compatibilidade
-          const mediaRecorder = new MediaRecorder(stream, {
-            mimeType: 'video/webm;codecs=h264',
-            videoBitsPerSecond: 10000000 // 10 Mbps para qualidade premium
-          });
+          // Usar configuração mais compatível
+          let mediaRecorder;
+          try {
+            mediaRecorder = new MediaRecorder(stream, {
+              mimeType: 'video/webm;codecs=vp9',
+              videoBitsPerSecond: 5000000 // 5 Mbps para melhor compatibilidade
+            });
+          } catch {
+            // Fallback para configuração mais básica
+            mediaRecorder = new MediaRecorder(stream, {
+              videoBitsPerSecond: 3000000 // 3 Mbps
+            });
+          }
 
           mediaRecorder.ondataavailable = (event) => {
             if (event.data.size > 0) {
@@ -280,8 +289,17 @@ export const useSmartProcessor = (): UseSmartProcessorReturn => {
               return;
             }
 
-            video.currentTime = startSeconds + (elapsed / 1000);
-            drawVerticalFrame(ctx, video, canvas);
+            // Melhor sincronização de tempo
+            const currentVideoTime = startSeconds + (elapsed / 1000);
+            if (Math.abs(video.currentTime - currentVideoTime) > 0.1) {
+              video.currentTime = currentVideoTime;
+            }
+            
+            // Aguardar o vídeo estar pronto antes de desenhar
+            if (video.readyState >= 2) {
+              drawVerticalFrame(ctx, video, canvas);
+            }
+            
             requestAnimationFrame(renderFrame);
           };
 
