@@ -82,7 +82,10 @@ export default function VCutPlatform() {
         setProcessingProgress(Math.floor((i / clipsToProcess.length) * 100));
         
         const blob = await smartProcessor.processSingleClip(videoFile, clip.start, clip.end, clip.title);
-        downloadBlob(blob, `${clip.title}_TikTok.mp4`);
+        
+        // Detectar tipo do arquivo e usar extensão correta
+        const fileExtension = blob.type.includes('mp4') ? 'mp4' : 'webm';
+        downloadBlob(blob, `${clip.title}_TikTok.${fileExtension}`);
         
         // Pequena pausa entre downloads
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -122,7 +125,9 @@ export default function VCutPlatform() {
       clearInterval(progressInterval);
       setProcessingProgress(100);
       
-      downloadBlob(blob, `${title}_TikTok.mp4`);
+      // Detectar tipo do arquivo e usar extensão correta
+      const fileExtension = blob.type.includes('mp4') ? 'mp4' : 'webm';
+      downloadBlob(blob, `${title}_TikTok.${fileExtension}`);
       
       setTimeout(() => {
         setIsProcessingManual(false);
@@ -632,7 +637,7 @@ export default function VCutPlatform() {
                                       <span>•</span>
                                       <span>📱 9:16</span>
                                       <span>•</span>
-                                      <span>🔥 MP4</span>
+                                      <span>🔥 MP4/WebM</span>
                                     </div>
                                     <Button
                                       onClick={(e) => {
@@ -835,7 +840,7 @@ export default function VCutPlatform() {
                       </div>
                       <div className="p-3 bg-white/5 rounded-xl border border-white/10">
                         <div className="text-lg mb-1">⚡</div>
-                        <div className="text-white/80 text-xs font-medium">MP4 Compatível</div>
+                        <div className="text-white/80 text-xs font-medium">MP4/WebM Auto</div>
                       </div>
                     </div>
                   </div>

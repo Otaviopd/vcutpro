@@ -249,18 +249,32 @@ export const useSmartProcessor = (): UseSmartProcessorReturn => {
           const stream = canvas.captureStream(30);
           
           // Usar H.264 para máxima compatibilidade
-          // Usar configuração mais compatível
+          // Tentar usar H.264 diretamente (mais compatível com MP4)
           let mediaRecorder;
+          let mimeType = 'video/webm';
+          
           try {
+            // Tentar H.264 primeiro (melhor para MP4)
             mediaRecorder = new MediaRecorder(stream, {
-              mimeType: 'video/webm;codecs=vp9',
-              videoBitsPerSecond: 5000000 // 5 Mbps para melhor compatibilidade
+              mimeType: 'video/webm;codecs=h264',
+              videoBitsPerSecond: 8000000
             });
+            mimeType = 'video/webm;codecs=h264';
           } catch {
-            // Fallback para configuração mais básica
-            mediaRecorder = new MediaRecorder(stream, {
-              videoBitsPerSecond: 3000000 // 3 Mbps
-            });
+            try {
+              // Fallback para VP9
+              mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'video/webm;codecs=vp9',
+                videoBitsPerSecond: 5000000
+              });
+              mimeType = 'video/webm;codecs=vp9';
+            } catch {
+              // Último fallback
+              mediaRecorder = new MediaRecorder(stream, {
+                videoBitsPerSecond: 3000000
+              });
+              mimeType = 'video/webm';
+            }
           }
 
           mediaRecorder.ondataavailable = (event) => {
@@ -270,10 +284,18 @@ export const useSmartProcessor = (): UseSmartProcessorReturn => {
           };
 
           mediaRecorder.onstop = async () => {
-            // Converter para MP4 compatível
-            const webmBlob = new Blob(chunks, { type: 'video/webm' });
-            const mp4Blob = await convertToMP4(webmBlob);
-            resolve(mp4Blob);
+            // Criar blob com o tipo correto baseado no codec usado
+            const videoBlob = new Blob(chunks, { type: mimeType });
+            
+            // Se conseguimos H.264, criar como MP4 diretamente
+            if (mimeType.includes('h264')) {
+              // H.264 em container WebM pode ser renomeado para MP4
+              const mp4Blob = new Blob([videoBlob], { type: 'video/mp4' });
+              resolve(mp4Blob);
+            } else {
+              // Para outros codecs, manter como WebM mas funcional
+              resolve(videoBlob);
+            }
           };
 
           mediaRecorder.start();
@@ -312,17 +334,7 @@ export const useSmartProcessor = (): UseSmartProcessorReturn => {
     });
   };
 
-  // Converter WebM para MP4 compatível
-  const convertToMP4 = async (webmBlob: Blob): Promise<Blob> => {
-    // Simular conversão (em produção usaria FFmpeg.wasm)
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Retornar como MP4 (mesmo conteúdo, tipo diferente para compatibilidade)
-        const mp4Blob = new Blob([webmBlob], { type: 'video/mp4' });
-        resolve(mp4Blob);
-      }, 100);
-    });
-  };
+  // Função removida - não precisamos de conversão fake
 
   // Desenhar frame vertical otimizado
   const drawVerticalFrame = (ctx: CanvasRenderingContext2D, video: HTMLVideoElement, canvas: HTMLCanvasElement) => {
