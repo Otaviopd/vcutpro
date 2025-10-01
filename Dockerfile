@@ -1,16 +1,9 @@
 FROM python:3.10-slim
 
-# Build version: 2024-10-01-v4-FIXED-DEPS
-# Instalar dependências do sistema
+# Build version: 2024-10-01-v5-MINIMAL
+# Instalar dependências do sistema (apenas essenciais)
 RUN apt-get update && apt-get install -y \
     ffmpeg \
-    libsm6 \
-    libxext6 \
-    libfontconfig1 \
-    libxrender1 \
-    libglib2.0-0 \
-    libgtk-3-0 \
-    libgdk-pixbuf2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Definir diretório de trabalho
