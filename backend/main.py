@@ -190,4 +190,6 @@ async def process_manual_cut(job_id: str, file_path: Path, start_time: str, end_
         job["error"] = str(e)
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    import os
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
