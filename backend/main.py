@@ -29,6 +29,14 @@ fake_ai = FakeAIProcessor()
 file_manager = FileManager()
 processing_jobs: Dict[str, Dict] = {}
 
+@app.get("/")
+async def health_check():
+    return {"status": "healthy", "service": "VCUT Pro API", "version": "2.0.0"}
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
 @app.post("/upload")
 async def upload_video(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
     job_id = str(uuid.uuid4())
