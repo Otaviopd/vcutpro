@@ -1,5 +1,6 @@
 FROM python:3.10-slim
 
+# Build version: 2024-10-01-v2
 # Instalar dependências do sistema
 RUN apt-get update && apt-get install -y \
     ffmpeg \
