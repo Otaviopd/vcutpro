@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir --user -r requirements.txt
 # Stage final - apenas runtime
 FROM python:3.10-slim
 
-# Build version: 2024-10-01-v10-MULTISTAGE
+# Build version: 2024-10-01-v11-TORCH-FIX
 # Instalar apenas FFmpeg (runtime)
 RUN apt-get update && apt-get install -y \
     ffmpeg \

@@ -16,7 +16,7 @@ pydub==0.25.1
 # AI/ML (otimizado)
 openai-whisper==20231117
 spacy==3.7.2
-torch==2.1.1+cpu
+torch==2.1.1
 transformers==4.36.2
 
 # NLP Models
