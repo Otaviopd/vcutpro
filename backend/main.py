@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict
 import asyncio
 
-from core.fake_ai_processor import FakeAIProcessor
+from core.simple_ffmpeg_only import SimpleFFmpegProcessor
 from utils.file_manager import FileManager
 
 app = FastAPI(title="VCUT Pro API", version="2.0.0")
@@ -25,7 +25,7 @@ app.add_middleware(
 )
 
 # Instâncias globais
-fake_ai = FakeAIProcessor()
+processor = SimpleFFmpegProcessor()
 file_manager = FileManager()
 processing_jobs: Dict[str, Dict] = {}
 
@@ -113,7 +113,7 @@ async def process_video_pipeline(job_id: str, file_path: Path):
         output_dir = file_path.parent / "clips"
         output_dir.mkdir(exist_ok=True)
         
-        clips_info = fake_ai.generate_automatic_clips(str(file_path), str(output_dir))
+        clips_info = processor.generate_automatic_clips(str(file_path), str(output_dir))
         
         # Converter para formato esperado pelo frontend
         clips = []
@@ -159,7 +159,7 @@ async def process_manual_cut(job_id: str, file_path: Path, start_time: str, end_
         # Criar clip com FFmpeg otimizado
         output_path = file_path.parent / f"{title}_WhatsApp.mp4"
         
-        result = fake_ai.cut_custom_segment(
+        result = processor.cut_custom_segment(
             str(file_path), 
             str(output_path), 
             start_time,
