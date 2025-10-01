@@ -1,0 +1,11 @@
+# Core Framework (apenas essencial)
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Video Processing (mínimo absoluto)
+ffmpeg-python==0.2.0
+
+# Utilities (básico)
+python-dotenv==1.0.0
+aiofiles==23.2.1

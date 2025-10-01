@@ -1,25 +1,19 @@
-# Stage único otimizado para <4GB
+# EXTREMAMENTE MINIMALISTA - APENAS FFmpeg + FastAPI
 FROM python:3.10-slim
 
-# Build version: 2024-10-01-v12-ULTRA-SLIM
-# Instalar dependências do sistema
+# Build version: 2024-10-01-v13-EXTREME-MINIMAL
+# Instalar apenas FFmpeg
 RUN apt-get update && apt-get install -y \
     ffmpeg \
-    build-essential \
     && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean \
-    && apt-get autoremove -y
+    && apt-get clean
 
 WORKDIR /app
 
-# Copiar requirements e instalar em uma única camada
-COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir https://github.com/explosion/spacy-models/releases/download/pt_core_news_sm-3.7.0/pt_core_news_sm-3.7.0-py3-none-any.whl \
+# Instalar apenas dependências absolutamente essenciais
+COPY backend/requirements.minimal-extreme.txt .
+RUN pip install --no-cache-dir -r requirements.minimal-extreme.txt \
     && pip cache purge \
-    && apt-get remove -y build-essential \
-    && apt-get autoremove -y \
-    && rm -rf /var/lib/apt/lists/* \
     && rm -rf /root/.cache
 
 # Copiar código
