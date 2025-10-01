@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict
 import asyncio
 
-from core.video_processor import VideoProcessor
+from core.fake_ai_processor import FakeAIProcessor
 from utils.file_manager import FileManager
 
 app = FastAPI(title="VCUT Pro API", version="2.0.0")
@@ -25,7 +25,7 @@ app.add_middleware(
 )
 
 # Instâncias globais
-video_processor = VideoProcessor()
+fake_ai = FakeAIProcessor()
 file_manager = FileManager()
 processing_jobs: Dict[str, Dict] = {}
 
@@ -85,29 +85,48 @@ async def process_video_pipeline(job_id: str, file_path: Path):
     try:
         job = processing_jobs[job_id]
         
-        # Pipeline completo
-        job["stage"] = "Transcrevendo..."
+        # Pipeline "IA" simulado
+        job["stage"] = "Analisando com IA..."
         job["progress"] = 20
-        transcription = await video_processor.transcribe_audio(file_path)
+        await asyncio.sleep(2)  # Simular processamento
         
-        job["stage"] = "Analisando conteúdo..."
+        job["stage"] = "Transcrevendo áudio..."
         job["progress"] = 40
-        analysis = await video_processor.analyze_content(transcription)
+        await asyncio.sleep(1)
         
         job["stage"] = "Detectando cenas..."
         job["progress"] = 60
-        scenes = await video_processor.detect_scenes(file_path)
+        await asyncio.sleep(1)
         
-        job["stage"] = "Gerando cortes..."
+        job["stage"] = "Gerando clips inteligentes..."
         job["progress"] = 80
-        clips = await video_processor.generate_intelligent_clips(
-            file_path, transcription, analysis, scenes
-        )
+        
+        # Usar processador fake que simula IA
+        output_dir = file_path.parent / "clips"
+        output_dir.mkdir(exist_ok=True)
+        
+        clips_info = fake_ai.generate_automatic_clips(str(file_path), str(output_dir))
+        
+        # Converter para formato esperado pelo frontend
+        clips = []
+        for i, clip_info in enumerate(clips_info):
+            clips.append({
+                "id": f"ai_clip_{i+1}",
+                "filename": clip_info["filename"],
+                "file_path": str(output_dir / clip_info["filename"]),
+                "title": clip_info["title"],
+                "description": clip_info["description"],
+                "duration": clip_info["duration"],
+                "start_time": clip_info["start_time"],
+                "ai_score": clip_info["ai_score"],
+                "engagement_prediction": clip_info["engagement_prediction"],
+                "optimal_for": clip_info["optimal_for"]
+            })
         
         job["clips"] = clips
         job["status"] = "completed"
         job["progress"] = 100
-        job["stage"] = "Concluído!"
+        job["stage"] = "IA concluída! 10 clips gerados"
         
     except Exception as e:
         job["status"] = "error"
@@ -132,13 +151,15 @@ async def process_manual_cut(job_id: str, file_path: Path, start_time: str, end_
         # Criar clip com FFmpeg otimizado
         output_path = file_path.parent / f"{title}_WhatsApp.mp4"
         
-        await video_processor._create_vertical_clip(
-            file_path, 
-            output_path, 
-            start_seconds, 
-            end_seconds,
-            title
+        result = fake_ai.cut_custom_segment(
+            str(file_path), 
+            str(output_path), 
+            start_time,
+            end_time
         )
+        
+        if not result["success"]:
+            raise Exception(result.get("error", "Erro no corte"))
         
         # Adicionar clip ao job
         clip = {
