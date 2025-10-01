@@ -1,7 +1,7 @@
 # EXTREMAMENTE MINIMALISTA - APENAS FFmpeg + FastAPI
 FROM python:3.10-slim
 
-# Build version: 2024-10-01-v16-FFMPEG-ONLY
+# Build version: 2024-10-01-v17-CORS-FIX
 # Instalar apenas FFmpeg
 RUN apt-get update && apt-get install -y \
     ffmpeg \

@@ -36,9 +36,15 @@ export default function VCutPlatform() {
 
   // Processar vídeo com IA (usando backend)
   const processVideoWithAI = async () => {
-    if (!videoFile) return;
+    console.log('processVideoWithAI chamado, videoFile:', videoFile);
+    if (!videoFile) {
+      console.log('Nenhum arquivo de vídeo selecionado');
+      alert('Por favor, selecione um arquivo de vídeo primeiro!');
+      return;
+    }
     
     try {
+      console.log('Iniciando processamento com IA...');
       const backendClips = await backendProcessor.processWithAI(videoFile);
       
       // Converter formato backend para frontend
@@ -373,9 +379,14 @@ export default function VCutPlatform() {
                     {/* IA Inteligente Card */}
                     <div 
                       onClick={() => {
+                        console.log('Card IA clicado!');
+                        console.log('analysisComplete:', analysisComplete);
+                        console.log('videoFile:', videoFile);
                         setProcessingMode('smart');
                         if (!analysisComplete) {
                           processVideoWithAI();
+                        } else {
+                          console.log('Análise já completa, não processando novamente');
                         }
                       }}
                       className={`group/card relative cursor-pointer transition-all duration-500 ${

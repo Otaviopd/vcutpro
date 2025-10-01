@@ -1,9 +1,7 @@
 // Configuração do Backend
 export const BACKEND_CONFIG = {
   // URL do backend (será atualizada após deploy)
-  BASE_URL: process.env.NODE_ENV === 'production' 
-    ? 'https://vcut-backend.railway.app' // URL será gerada pelo Railway
-    : 'http://localhost:8000',
+  BASE_URL: 'https://vcutpro-production.up.railway.app', // Sempre usar Railway
   
   // Endpoints
   ENDPOINTS: {
