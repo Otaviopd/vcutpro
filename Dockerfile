@@ -1,9 +1,13 @@
 FROM python:3.10-slim
 
-# Build version: 2024-10-01-v5-MINIMAL
-# Instalar dependências do sistema (apenas essenciais)
+# Build version: 2024-10-01-v6-BUILD-TOOLS
+# Instalar dependências do sistema + ferramentas de build
 RUN apt-get update && apt-get install -y \
     ffmpeg \
+    build-essential \
+    cmake \
+    gcc \
+    g++ \
     && rm -rf /var/lib/apt/lists/*
 
 # Definir diretório de trabalho
