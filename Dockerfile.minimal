@@ -1,6 +1,5 @@
 FROM python:3.10-slim
 
-# Build version: 2024-10-01-v8-MINIMAL
 # Instalar apenas FFmpeg (essencial)
 RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 
