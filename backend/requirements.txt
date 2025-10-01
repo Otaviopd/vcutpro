@@ -6,31 +6,22 @@ pydantic==2.5.0
 
 # Video Processing
 ffmpeg-python==0.2.0
-opencv-python==4.8.1.78
+opencv-python-headless==4.8.1.78
 scenedetect[opencv]==0.6.2
 moviepy==1.0.3
 
 # Audio Processing (essencial)
 pydub==0.25.1
 
-# AI/ML (otimizado)
+# AI/ML (ultra-otimizado)
 openai-whisper==20231117
 spacy==3.7.2
-torch==2.1.1
-transformers==4.36.2
 
 # NLP Models
 https://github.com/explosion/spacy-models/releases/download/pt_core_news_sm-3.7.0/pt_core_news_sm-3.7.0-py3-none-any.whl
 
-# Utilities
+# Utilities (mínimo)
 numpy==1.24.3
-pandas==2.1.4
-Pillow==10.1.0
 python-dotenv==1.0.0
 aiofiles==23.2.1
-redis==5.0.1
-
-# Face Detection (removido - não essencial para FFmpeg)
-
-# Progress tracking
 tqdm==4.66.1
