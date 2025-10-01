@@ -1,6 +1,6 @@
 FROM python:3.10-slim
 
-# Build version: 2024-10-01-v6-BUILD-TOOLS
+# Build version: 2024-10-01-v7-SPACY-FIX
 # Instalar dependências do sistema + ferramentas de build
 RUN apt-get update && apt-get install -y \
     ffmpeg \
@@ -17,8 +17,8 @@ WORKDIR /app
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Baixar modelo spaCy
-RUN python -m spacy download pt_core_news_sm
+# Baixar modelo spaCy (método alternativo)
+RUN pip install https://github.com/explosion/spacy-models/releases/download/pt_core_news_sm-3.7.0/pt_core_news_sm-3.7.0-py3-none-any.whl
 
 # Copiar código do backend
 COPY backend/ .
