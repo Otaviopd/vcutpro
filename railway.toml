@@ -1,0 +1,13 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "backend/Dockerfile"
+
+[deploy]
+startCommand = "cd backend && python main.py"
+healthcheckPath = "/docs"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+
+[variables]
+PORT = "8000"
+PYTHONPATH = "/app/backend"

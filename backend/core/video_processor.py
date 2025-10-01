@@ -304,32 +304,58 @@ class VideoProcessor:
     ):
         """Criar clip vertical 9:16 com zoom dinâmico e legendas"""
         try:
-            # Comando FFmpeg complexo para formato vertical + legendas
+            # Comando FFmpeg otimizado para WhatsApp (100% compatibilidade)
             cmd = [
                 'ffmpeg', '-y',
                 '-i', str(input_path),
                 '-ss', str(start_time),
                 '-t', str(end_time - start_time),
+                
+                # Vídeo: H.264 High Profile Level 4.0 + yuv420p
+                '-c:v', 'libx264',
+                '-profile:v', 'high',
+                '-level', '4.0',
+                '-pix_fmt', 'yuv420p',
+                
+                # Taxa de quadros constante (CFR) 30 fps
+                '-r', '30',
+                '-vsync', 'cfr',
+                
+                # GOP otimizado (keyframes a cada 2 segundos)
+                '-g', '60',
+                '-keyint_min', '60',
+                '-sc_threshold', '0',
+                
+                # Qualidade otimizada
+                '-crf', '21',
+                '-preset', 'medium',
+                '-tune', 'film',
+                
+                # Áudio: AAC 128 kbps (WhatsApp padrão)
+                '-c:a', 'aac',
+                '-b:a', '128k',
+                '-ar', '44100',
+                '-ac', '2',
+                
+                # Formato vertical 9:16 com crop inteligente
                 '-vf', (
-                    # Redimensionar para 9:16 com crop inteligente
                     'scale=1080:1920:force_original_aspect_ratio=increase,'
                     'crop=1080:1920,'
-                    # Adicionar texto (legenda)
+                    # Adicionar texto (legenda) se necessário
                     f'drawtext=text=\'{subtitle_text[:50]}\':'
-                    'fontfile=/Windows/Fonts/arial.ttf:'
                     'fontsize=40:'
                     'fontcolor=white:'
-                    'shadowcolor=black:'
+                    'shadowcolor=black@0.8:'
                     'shadowx=2:'
                     'shadowy=2:'
                     'x=(w-text_w)/2:'
-                    'y=h-100'
+                    'y=h-120'
                 ),
-                '-c:v', 'libx264',
-                '-preset', 'fast',
-                '-crf', '23',
-                '-c:a', 'aac',
-                '-b:a', '128k',
+                
+                # Metadados otimizados
+                '-movflags', '+faststart',
+                '-fflags', '+genpts',
+                
                 str(output_path)
             ]
             

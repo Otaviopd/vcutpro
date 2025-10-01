@@ -59,6 +59,28 @@ async def download_clip(job_id: str, clip_id: str):
     
     return FileResponse(clip["file_path"], filename=clip["filename"])
 
+@app.post("/manual-cut")
+async def manual_cut(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    start_time: str = "00:00",
+    end_time: str = "00:30",
+    title: str = "Corte_Manual"
+):
+    """Corte manual rápido sem IA - apenas FFmpeg otimizado"""
+    job_id = str(uuid.uuid4())
+    file_path = await file_manager.save_upload(file, job_id)
+    
+    processing_jobs[job_id] = {
+        "status": "processing",
+        "progress": 0,
+        "stage": "Processando corte...",
+        "clips": []
+    }
+    
+    background_tasks.add_task(process_manual_cut, job_id, file_path, start_time, end_time, title)
+    return {"job_id": job_id, "message": "Corte manual iniciado"}
+
 async def process_video_pipeline(job_id: str, file_path: Path):
     try:
         job = processing_jobs[job_id]
@@ -83,6 +105,53 @@ async def process_video_pipeline(job_id: str, file_path: Path):
         )
         
         job["clips"] = clips
+        job["status"] = "completed"
+        job["progress"] = 100
+        job["stage"] = "Concluído!"
+        
+    except Exception as e:
+        job["status"] = "error"
+        job["error"] = str(e)
+
+async def process_manual_cut(job_id: str, file_path: Path, start_time: str, end_time: str, title: str):
+    """Processamento rápido de corte manual"""
+    try:
+        job = processing_jobs[job_id]
+        
+        # Converter tempo MM:SS para segundos
+        def time_to_seconds(time_str):
+            parts = time_str.split(':')
+            return int(parts[0]) * 60 + int(parts[1])
+        
+        start_seconds = time_to_seconds(start_time)
+        end_seconds = time_to_seconds(end_time)
+        
+        job["stage"] = "Cortando vídeo..."
+        job["progress"] = 50
+        
+        # Criar clip com FFmpeg otimizado
+        output_path = file_path.parent / f"{title}_WhatsApp.mp4"
+        
+        await video_processor._create_vertical_clip(
+            file_path, 
+            output_path, 
+            start_seconds, 
+            end_seconds,
+            title
+        )
+        
+        # Adicionar clip ao job
+        clip = {
+            "id": "manual_clip",
+            "filename": f"{title}_WhatsApp.mp4",
+            "file_path": str(output_path),
+            "start_time": start_seconds,
+            "end_time": end_seconds,
+            "duration": end_seconds - start_seconds,
+            "description": f"Corte manual: {start_time} - {end_time}"
+        }
+        
+        job["clips"] = [clip]
         job["status"] = "completed"
         job["progress"] = 100
         job["stage"] = "Concluído!"

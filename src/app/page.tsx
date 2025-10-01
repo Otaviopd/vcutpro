@@ -2,7 +2,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "../componentes/ui/button";
 import { Input } from "../componentes/ui/input";
-import { useSmartProcessor, downloadBlob, type SmartClipData } from "../hooks/useSmartProcessor";
+import { useSmartProcessor, SmartClipData } from "@/hooks/useSmartProcessor";
+import { useBackendProcessor, BackendClipData } from "@/hooks/useBackendProcessor";
 import { useAuthHook } from "../hooks/useAuth";
 import LoginScreen from "../componentes/LoginScreen";
 
@@ -26,26 +27,48 @@ export default function VCutPlatform() {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const smartProcessor = useSmartProcessor();
+  const backendProcessor = useBackendProcessor();
   const auth = useAuthHook();
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Processar vídeo com IA
+  // Processar vídeo com IA (usando backend)
   const processVideoWithAI = async () => {
     if (!videoFile) return;
     
     try {
-      const clips = await smartProcessor.processVideoSmart(videoFile);
-      setGeneratedClips(clips);
-      setSelectedClips(clips.map(c => c.id));
+      const backendClips = await backendProcessor.processWithAI(videoFile);
+      
+      // Converter formato backend para frontend
+      const convertedClips: SmartClipData[] = backendClips.map((clip, index) => ({
+        id: clip.id,
+        title: `Clip ${index + 1}`,
+        start: formatSecondsToTime(clip.start_time),
+        end: formatSecondsToTime(clip.end_time),
+        duration: clip.duration,
+        viralPotential: clip.viral_potential || 85,
+        description: clip.description,
+        impactScore: clip.impact_score || 85,
+        keywords: ['viral', 'impacto', 'conteúdo']
+      }));
+      
+      setGeneratedClips(convertedClips);
+      setSelectedClips(convertedClips.map(c => c.id));
       setAnalysisComplete(true);
-      setViralScore(Math.floor(clips.reduce((acc, clip) => acc + clip.viralPotential, 0) / clips.length));
+      setViralScore(Math.floor(convertedClips.reduce((acc, clip) => acc + clip.viralPotential, 0) / convertedClips.length));
     } catch (error) {
-      console.error('Erro no processamento:', error);
+      console.error('Erro na análise:', error);
       alert('Erro ao processar vídeo. Tente novamente.');
     }
+  };
+
+  // Helper para converter segundos para MM:SS
+  const formatSecondsToTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,34 +128,23 @@ export default function VCutPlatform() {
     }
   };
 
-  // Processar corte manual
+  // Processar corte manual (usando backend)
   const processCustomClip = async () => {
     if (!videoFile) return;
 
     try {
-      setIsProcessingManual(true);
-      setProcessingProgress(0);
-      
       const title = customTitle || `Corte_${customStartTime}_${customEndTime}`;
       
-      // Simular progresso
-      const progressInterval = setInterval(() => {
-        setProcessingProgress(prev => Math.min(prev + 10, 90));
-      }, 200);
+      // Usar backend para corte manual
+      const clip = await backendProcessor.processManualCut(
+        videoFile, 
+        customStartTime, 
+        customEndTime, 
+        title
+      );
       
-      const blob = await smartProcessor.processSingleClip(videoFile, customStartTime, customEndTime, title);
-      
-      clearInterval(progressInterval);
-      setProcessingProgress(100);
-      
-      // Detectar tipo do arquivo e usar extensão correta
-      const fileExtension = blob.type.includes('mp4') ? 'mp4' : 'webm';
-      downloadBlob(blob, `${title}_TikTok.${fileExtension}`);
-      
-      setTimeout(() => {
-        setIsProcessingManual(false);
-        setProcessingProgress(0);
-      }, 1000);
+      // Download direto do backend
+      await backendProcessor.downloadClip('manual_job', clip.id, clip.filename);
       
     } catch (error) {
       console.error('Erro no corte manual:', error);
@@ -572,22 +584,22 @@ export default function VCutPlatform() {
                             </h3>
                             <Button
                               onClick={processSelectedClips}
-                              disabled={selectedClips.length === 0 || isProcessingClips}
+                              disabled={selectedClips.length === 0 || backendProcessor.isProcessing}
                               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 relative overflow-hidden"
                             >
-                              {isProcessingClips ? (
+                              {backendProcessor.isProcessing ? (
                                 <div className="flex items-center gap-2">
                                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                  <span>Processando... {processingProgress}%</span>
+                                  <span>{backendProcessor.stage} {backendProcessor.progress}%</span>
                                 </div>
                               ) : (
                                 <span>📥 Baixar {selectedClips.length} Clips</span>
                               )}
                               
-                              {isProcessingClips && (
+                              {backendProcessor.isProcessing && (
                                 <div 
                                   className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-green-400 to-blue-400 transition-all duration-300"
-                                  style={{ width: `${processingProgress}%` }}
+                                  style={{ width: `${backendProcessor.progress}%` }}
                                 />
                               )}
                             </Button>
@@ -803,13 +815,13 @@ export default function VCutPlatform() {
                       <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl blur opacity-75 group-hover/button:opacity-100 transition-all duration-300" />
                       <Button
                         onClick={processCustomClip}
-                        disabled={isProcessingManual}
+                        disabled={backendProcessor.isProcessing}
                         className="relative w-full h-16 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-black text-lg rounded-2xl shadow-2xl transform transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:scale-100 overflow-hidden"
                       >
-                        {isProcessingManual ? (
+                        {backendProcessor.isProcessing ? (
                           <div className="flex items-center justify-center gap-3">
                             <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
-                            <span>Processando Corte... {processingProgress}%</span>
+                            <span>{backendProcessor.stage} {backendProcessor.progress}%</span>
                           </div>
                         ) : (
                           <span className="flex items-center justify-center gap-3">
@@ -819,10 +831,10 @@ export default function VCutPlatform() {
                           </span>
                         )}
                         
-                        {isProcessingManual && (
+                        {backendProcessor.isProcessing && (
                           <div 
                             className="absolute bottom-0 left-0 h-2 bg-gradient-to-r from-green-400 via-yellow-400 to-orange-400 transition-all duration-300"
-                            style={{ width: `${processingProgress}%` }}
+                            style={{ width: `${backendProcessor.progress}%` }}
                           />
                         )}
                       </Button>
